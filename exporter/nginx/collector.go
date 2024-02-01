@@ -1,6 +1,8 @@
 package nginx
 
 type NginxStats struct {
+	Interval float64
+
 	ConnectionsActive float64
 	Connections       []Connections
 }
