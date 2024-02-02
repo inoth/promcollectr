@@ -15,7 +15,7 @@
 				"mode": "auto",
 				"program": "${workspaceFolder}/app/main.go",
 				"env": {
-					"GORUNEVN": "dev"
+					
 				},
 				"args":[
 					"-c","../config"

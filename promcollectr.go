@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/sync/errgroup"
 )
 
 type conf struct {
@@ -73,16 +72,30 @@ func (pm *PromcollectrComponent) Run(ctx context.Context) error {
 		return err
 	}
 
-	pm.runExporter(ctx)
+	// var eg errgroup.Group
+	// for _, exp := range pm.exporters {
+	// 	exp := exp
+	// 	eg.Go(func() error {
+	// 		return exp.Run(ctx)
+	// 	})
+	// }
+	// if err := eg.Wait(); err != nil {
+	// 	return errors.Wrap(err, "run exporter init failed")
+	// }
+
+	for _, exp := range pm.exporters {
+		if err := exp.Run(ctx); err != nil {
+			return errors.Wrap(err, "run exporter init failed")
+		}
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(pm.Path, promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
-	if err := http.ListenAndServe(pm.Port, mux); err != nil {
-		// return errors.Wrap(err, "http.ListenAndServe failed")
-		panic(err)
-	}
 
-	return nil
+	// if err :=  err != nil {
+	// 	return errors.Wrap(err, "http.ListenAndServe failed")
+	// }
+	return http.ListenAndServe(pm.Port, mux)
 }
 
 func (pm *PromcollectrComponent) loadExporterCfg() error {
@@ -134,19 +147,6 @@ func (pm *PromcollectrComponent) initExporter(ctx context.Context) error {
 		}
 	}
 	return nil
-}
-
-func (pm *PromcollectrComponent) runExporter(ctx context.Context) {
-	eg, _ := errgroup.WithContext(ctx)
-	for _, exp := range pm.exporters {
-		exp := exp
-		eg.Go(func() error {
-			return exp.Run(ctx)
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		panic(errors.Wrap(err, "run exporter init failed"))
-	}
 }
 
 func (pm *PromcollectrComponent) register() (*prometheus.Registry, error) {

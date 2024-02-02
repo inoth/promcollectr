@@ -17,6 +17,7 @@ type NginxCollector struct {
 	Addr    string `toml:"addr"`
 	LogPath string `toml:"log_path"`
 
+	metric     *metrics
 	collectors []prometheus.Collector
 
 	stats             func() ([]NginxStats, error)
@@ -54,16 +55,19 @@ func (nc *NginxCollector) Init(ctx context.Context, namespace string) error {
 		return ScanBasicStats(r)
 	}
 
-	m := NewMetrics(namespace, nc.Name)
+	nc.metric = NewMetrics(namespace, nc.Name)
 
-	nc.collectors = append(nc.collectors, m.size, m.requests, m.duration)
-
-	go m.tailAccessLogFile(nc.LogPath)
+	nc.collectors = append(nc.collectors,
+		nc.metric.size,
+		nc.metric.requests,
+		nc.metric.duration,
+	)
 
 	return nil
 }
 
 func (nc *NginxCollector) Run(ctx context.Context) error {
+	go nc.metric.tailAccessLogFile(ctx, nc.LogPath)
 	return nil
 }
 

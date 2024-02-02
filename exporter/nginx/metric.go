@@ -1,6 +1,7 @@
 package nginx
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strconv"
@@ -38,37 +39,45 @@ func NewMetrics(namespace, subsystem string) *metrics {
 			Buckets:   prometheus.DefBuckets,
 		}, []string{"status_code", "method", "uri"}),
 	}
-
 	return m
 }
 
-func (m *metrics) tailAccessLogFile(path string) {
+func (m *metrics) tailAccessLogFile(ctx context.Context, path string) {
 	t, err := tail.TailFile(path, tail.Config{Follow: true, ReOpen: true})
 	if err != nil {
 		log.Fatalf("tail.TailFile failed: %s", err)
 	}
 	for line := range t.Lines {
-		log.Fatalln("watch log file ...")
-		res, err := util.JsonParse[map[string]any]([]byte(line.Text))
-		if err != nil {
-			continue
+		log.Fatalf("step1: watch log %s ...\n", path)
+		select {
+		case <-ctx.Done():
+			log.Fatalf("return: watch log %s ...\n", path)
+			return
+		default:
+			log.Fatalf("step2: watch log %s ...\n", path)
+			res, err := util.JsonParse[map[string]any]([]byte(line.Text))
+			if err != nil {
+				continue
+			}
+
+			result := convertFieldsToString(res)
+
+			s, err := strconv.ParseFloat(result["bytes"], 64)
+			if err != nil {
+				continue
+			}
+			m.size.Add(s)
+
+			m.requests.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Add(1)
+
+			u, err := strconv.ParseFloat(result["request_time"], 64)
+			if err != nil {
+				continue
+			}
+			m.duration.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Observe(u)
+
+			log.Fatalf("step3: watch log %s ...\n", path)
 		}
-
-		result := convertFieldsToString(res)
-
-		s, err := strconv.ParseFloat(result["bytes"], 64)
-		if err != nil {
-			continue
-		}
-		m.size.Add(s)
-
-		m.requests.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Add(1)
-
-		u, err := strconv.ParseFloat(result["request_time"], 64)
-		if err != nil {
-			continue
-		}
-		m.duration.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Observe(u)
 	}
 }
 
