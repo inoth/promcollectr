@@ -1,12 +1,16 @@
 package exporter
 
-import "github.com/prometheus/client_golang/prometheus"
+import (
+	"context"
+
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 type Exporter interface {
 	prometheus.Collector
 
-	// Name() string
-	Init() error
+	Init(ctx context.Context, subsystem string) error
+	SubCollector() []prometheus.Collector
 }
 
 type Creator func() Exporter

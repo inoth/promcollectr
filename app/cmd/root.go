@@ -20,11 +20,16 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
+		cfg := toybox.SetConfig{
+			ConfDir:  "config",
+			FileType: "toml",
+		}
+		if confDir != "" {
+			cfg.ConfDir = confDir
+		}
+
 		tb := toybox.New(
-			toybox.WithLoadConf(toybox.SetConfig{
-				ConfDir:  "../config",
-				FileType: "toml",
-			}),
+			toybox.WithLoadConf(cfg),
 			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath("../config/exporter")),
 		)
 		if err := tb.Run(); err != nil {
@@ -44,7 +49,7 @@ func Execute() {
 }
 
 var (
-	conf string // 配置文件地址
+	confDir string // 配置文件地址
 )
 
 func init() {
@@ -58,5 +63,5 @@ func init() {
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	rootCmd.Flags().StringVarP(&conf, "config", "c", "./config.toml", "配置文件地址")
+	rootCmd.Flags().StringVarP(&confDir, "config", "c", "./config", "配置文件夹地址")
 }

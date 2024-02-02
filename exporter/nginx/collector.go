@@ -1,7 +1,12 @@
 package nginx
 
 import (
-	"fmt"
+	"bytes"
+	"context"
+	"io"
+	"log"
+	"net/http"
+	"time"
 
 	"github.com/inoth/promcollectr/exporter"
 	"github.com/prometheus/client_golang/prometheus"
@@ -11,19 +16,93 @@ type NginxCollector struct {
 	Name    string `toml:"name"`
 	Addr    string `toml:"addr"`
 	LogPath string `toml:"log_path"`
+
+	collectors []prometheus.Collector
+
+	stats             func() ([]NginxStats, error)
+	ConnectionsActive *prometheus.Desc `toml:"-"`
+	Connections       *prometheus.Desc `toml:"-"`
 }
 
-func (nc *NginxCollector) Init() error {
-	fmt.Println("nginx hello world: " + nc.Name)
+func (nc *NginxCollector) Init(ctx context.Context, subsystem string) error {
+	nc.ConnectionsActive = prometheus.NewDesc(
+		"nginx_connections_active",
+		"Number of active connections.",
+		[]string{},
+		nil,
+	)
+	nc.Connections = prometheus.NewDesc(
+		"nginx_connections_total",
+		"Connections (Reading - Writing - Waiting)",
+		[]string{"type"},
+		nil,
+	)
+	nc.stats = func() ([]NginxStats, error) {
+		var client = &http.Client{
+			Timeout: time.Second * 10,
+		}
+		resp, err := client.Get(nc.Addr)
+		if err != nil {
+			log.Fatalf("client.Get failed %s: %s", nc.Addr, err)
+		}
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("io.ReadAll failed %s", err)
+		}
+		r := bytes.NewReader(body)
+		return ScanBasicStats(r)
+	}
+
+	m := NewMetrics(nc, subsystem, nc.Name)
+
+	go m.tailAccessLogFile(ctx, nc.LogPath)
+
 	return nil
 }
 
-func (nc *NginxCollector) Describe(chan<- *prometheus.Desc) {
-
+func (nc *NginxCollector) SubCollector() []prometheus.Collector {
+	return nc.collectors
 }
 
-func (nc *NginxCollector) Collect(chan<- prometheus.Metric) {
+func (nc *NginxCollector) Describe(ch chan<- *prometheus.Desc) {
+	ds := []*prometheus.Desc{
+		nc.ConnectionsActive,
+	}
+	for _, d := range ds {
+		ch <- d
+	}
+}
 
+func (nc *NginxCollector) Collect(ch chan<- prometheus.Metric) {
+	stats, err := nc.stats()
+	if err != nil {
+		ch <- prometheus.NewInvalidMetric(nc.ConnectionsActive, err)
+		return
+	}
+	for _, s := range stats {
+		ch <- prometheus.MustNewConstMetric(
+			nc.ConnectionsActive,
+			prometheus.GaugeValue,
+			s.ConnectionsActive,
+		)
+		for _, conn := range s.Connections {
+			conns := []struct {
+				connType string
+				total    float64
+			}{
+				{connType: conn.Type, total: conn.Total},
+			}
+			for _, connT := range conns {
+				ch <- prometheus.MustNewConstMetric(
+					nc.Connections,
+					prometheus.CounterValue,
+					connT.total,
+					connT.connType,
+				)
+			}
+		}
+	}
 }
 
 func init() {

@@ -123,11 +123,11 @@ func (pm *PromcollectrComponent) loadExporter() error {
 }
 
 func (pm *PromcollectrComponent) runExporter(ctx context.Context) {
-	eg, _ := errgroup.WithContext(ctx)
+	eg, egctx := errgroup.WithContext(ctx)
 	for _, exp := range pm.exporters {
 		exp := exp
 		eg.Go(func() error {
-			return exp.Init()
+			return exp.Init(egctx, pm.ServerName)
 		})
 	}
 	if err := eg.Wait(); err != nil {

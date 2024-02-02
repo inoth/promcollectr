@@ -17,6 +17,9 @@
 				"env": {
 					"GORUNEVN": "dev"
 				},
+				"args":[
+					"-c","../config"
+				]
 			}
 		]
 	}
