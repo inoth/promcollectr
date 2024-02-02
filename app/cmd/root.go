@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 
 		tb := toybox.New(
 			toybox.WithLoadConf(cfg),
-			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath("../config/exporter")),
+			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath(cfg.ConfDir+"/exporter")),
 		)
 		if err := tb.Run(); err != nil {
 			panic(err)

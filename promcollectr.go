@@ -72,30 +72,13 @@ func (pm *PromcollectrComponent) Run(ctx context.Context) error {
 		return err
 	}
 
-	// var eg errgroup.Group
-	// for _, exp := range pm.exporters {
-	// 	exp := exp
-	// 	eg.Go(func() error {
-	// 		return exp.Run(ctx)
-	// 	})
-	// }
-	// if err := eg.Wait(); err != nil {
-	// 	return errors.Wrap(err, "run exporter init failed")
-	// }
-
-	for _, exp := range pm.exporters {
-		if err := exp.Run(ctx); err != nil {
-			return errors.Wrap(err, "run exporter init failed")
-		}
-	}
-
 	mux := http.NewServeMux()
 	mux.Handle(pm.Path, promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
 
-	// if err :=  err != nil {
-	// 	return errors.Wrap(err, "http.ListenAndServe failed")
-	// }
-	return http.ListenAndServe(pm.Port, mux)
+	if err := http.ListenAndServe(pm.Port, mux); err != nil {
+		return errors.Wrap(err, "http.ListenAndServe failed")
+	}
+	return nil
 }
 
 func (pm *PromcollectrComponent) loadExporterCfg() error {

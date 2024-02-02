@@ -1,6 +1,8 @@
 module github.com/inoth/promcollectr
 
-go 1.20
+go 1.21
+
+toolchain go1.21.6
 
 require (
 	github.com/BurntSushi/toml v1.3.2
@@ -9,7 +11,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/sync v0.6.0
 )
 
 require (
@@ -31,6 +32,7 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect

@@ -48,13 +48,10 @@ func (m *metrics) tailAccessLogFile(ctx context.Context, path string) {
 		log.Fatalf("tail.TailFile failed: %s", err)
 	}
 	for line := range t.Lines {
-		log.Fatalf("step1: watch log %s ...\n", path)
 		select {
 		case <-ctx.Done():
-			log.Fatalf("return: watch log %s ...\n", path)
 			return
 		default:
-			log.Fatalf("step2: watch log %s ...\n", path)
 			res, err := util.JsonParse[map[string]any]([]byte(line.Text))
 			if err != nil {
 				continue
@@ -75,8 +72,6 @@ func (m *metrics) tailAccessLogFile(ctx context.Context, path string) {
 				continue
 			}
 			m.duration.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Observe(u)
-
-			log.Fatalf("step3: watch log %s ...\n", path)
 		}
 	}
 }

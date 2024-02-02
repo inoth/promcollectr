@@ -11,7 +11,6 @@ type Exporter interface {
 
 	Init(ctx context.Context, subsystem string) error
 	SubCollector() []prometheus.Collector
-	Run(ctx context.Context) error
 }
 
 type Creator func() Exporter
