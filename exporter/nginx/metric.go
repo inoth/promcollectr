@@ -30,14 +30,14 @@ func NewMetrics(namespace, subsystem string) *metrics {
 			Namespace: namespace,
 			Name:      "http_requests_total",
 			Help:      "Total number of requests.",
-		}, []string{"status_code", "method", "uri"}),
+		}, []string{"status", "method", "uri"}),
 		duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Subsystem: subsystem,
 			Namespace: namespace,
 			Name:      "http_request_duration_seconds",
 			Help:      "Duration of the request.",
 			Buckets:   prometheus.DefBuckets,
-		}, []string{"status_code", "method", "uri"}),
+		}, []string{"status", "method", "uri"}),
 	}
 	return m
 }
@@ -65,13 +65,13 @@ func (m *metrics) tailAccessLogFile(ctx context.Context, path string) {
 			}
 			m.size.Add(s)
 
-			m.requests.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Add(1)
+			m.requests.With(prometheus.Labels{"method": result["method"], "status": result["status"], "uri": result["uri"]}).Add(1)
 
 			u, err := strconv.ParseFloat(result["request_time"], 64)
 			if err != nil {
 				continue
 			}
-			m.duration.With(prometheus.Labels{"method": result["method"], "status_code": result["status"], "uri": result["uri"]}).Observe(u)
+			m.duration.With(prometheus.Labels{"method": result["method"], "status": result["status"], "uri": result["uri"]}).Observe(u)
 		}
 	}
 }
