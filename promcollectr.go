@@ -60,27 +60,32 @@ func (pm *PromcollectrComponent) Run(ctx context.Context) error {
 		return fmt.Errorf("server %s not ready", pm.name)
 	}
 
-	if err := pm.initExporter(); err != nil {
-		return errors.Wrap(err, "pm.initExporter() failed")
+	if err := pm.loadExporterCfg(); err != nil {
+		return errors.Wrap(err, "pm.loadExporterCfg() failed")
 	}
 
-	pm.runExporter(ctx)
+	if err := pm.initExporter(ctx); err != nil {
+		return errors.Wrap(err, "pm.initExporter() failed")
+	}
 
 	reg, err := pm.register()
 	if err != nil {
 		return err
 	}
 
+	pm.runExporter(ctx)
+
 	mux := http.NewServeMux()
 	mux.Handle(pm.Path, promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
 	if err := http.ListenAndServe(pm.Port, mux); err != nil {
-		return errors.Wrap(err, "http.ListenAndServe failed")
+		// return errors.Wrap(err, "http.ListenAndServe failed")
+		panic(err)
 	}
 
 	return nil
 }
 
-func (pm *PromcollectrComponent) initExporter() error {
+func (pm *PromcollectrComponent) loadExporterCfg() error {
 	paths, err := util.PathGlobPattern(pm.CfgPath + "/*.toml")
 	if err != nil {
 		panic(fmt.Errorf("no configuration available"))
@@ -122,12 +127,21 @@ func (pm *PromcollectrComponent) loadExporter() error {
 	return nil
 }
 
+func (pm *PromcollectrComponent) initExporter(ctx context.Context) error {
+	for _, exp := range pm.exporters {
+		if err := exp.Init(ctx, pm.ServerName); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (pm *PromcollectrComponent) runExporter(ctx context.Context) {
-	eg, egctx := errgroup.WithContext(ctx)
+	eg, _ := errgroup.WithContext(ctx)
 	for _, exp := range pm.exporters {
 		exp := exp
 		eg.Go(func() error {
-			return exp.Init(egctx, pm.ServerName)
+			return exp.Run(ctx)
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -140,6 +154,7 @@ func (pm *PromcollectrComponent) register() (*prometheus.Registry, error) {
 	for _, item := range pm.exporters {
 		if val, ok := item.(prometheus.Collector); ok {
 			reg.MustRegister(val)
+			reg.MustRegister(item.SubCollector()...)
 		}
 	}
 	return reg, nil

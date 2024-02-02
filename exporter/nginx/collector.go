@@ -24,15 +24,15 @@ type NginxCollector struct {
 	Connections       *prometheus.Desc `toml:"-"`
 }
 
-func (nc *NginxCollector) Init(ctx context.Context, subsystem string) error {
+func (nc *NginxCollector) Init(ctx context.Context, namespace string) error {
 	nc.ConnectionsActive = prometheus.NewDesc(
-		"nginx_connections_active",
+		prometheus.BuildFQName(namespace, nc.Name, "nginx_connections_active"),
 		"Number of active connections.",
 		[]string{},
 		nil,
 	)
 	nc.Connections = prometheus.NewDesc(
-		"nginx_connections_total",
+		prometheus.BuildFQName(namespace, nc.Name, "nginx_connections_total"),
 		"Connections (Reading - Writing - Waiting)",
 		[]string{"type"},
 		nil,
@@ -54,10 +54,16 @@ func (nc *NginxCollector) Init(ctx context.Context, subsystem string) error {
 		return ScanBasicStats(r)
 	}
 
-	m := NewMetrics(nc, subsystem, nc.Name)
+	m := NewMetrics(namespace, nc.Name)
 
-	go m.tailAccessLogFile(ctx, nc.LogPath)
+	nc.collectors = append(nc.collectors, m.size, m.requests, m.duration)
 
+	go m.tailAccessLogFile(nc.LogPath)
+
+	return nil
+}
+
+func (nc *NginxCollector) Run(ctx context.Context) error {
 	return nil
 }
 

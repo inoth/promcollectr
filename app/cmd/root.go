@@ -4,7 +4,6 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/inoth/promcollectr"
@@ -33,8 +32,7 @@ var rootCmd = &cobra.Command{
 			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath("../config/exporter")),
 		)
 		if err := tb.Run(); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			panic(err)
 		}
 	},
 }
