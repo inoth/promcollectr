@@ -1,0 +1,14 @@
+[[exporter.nginx]]
+
+name = "nginx1"
+addr = "http://localhost:8181/status"
+log_path = "./access.log"
+
+
+[[exporter.nginx]]
+
+name = "nginx2"
+addr = "http://localhost:8181/status"
+log_path = "./access.log"
+
+

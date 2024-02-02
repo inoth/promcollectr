@@ -5,7 +5,7 @@ import "github.com/prometheus/client_golang/prometheus"
 type Exporter interface {
 	prometheus.Collector
 
-	Interval() float64
+	// Name() string
 	Init() error
 }
 

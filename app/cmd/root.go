@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/inoth/promcollectr"
+	_ "github.com/inoth/promcollectr/exporter/all"
+	"github.com/inoth/toybox"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +20,14 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("hello world; %s\n", conf)
+		tb := toybox.New(
+			toybox.WithLoadConf(),
+			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath("../config/exporter")),
+		)
+		if err := tb.Run(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
