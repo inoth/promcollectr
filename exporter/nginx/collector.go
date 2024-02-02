@@ -17,7 +17,6 @@ type NginxCollector struct {
 	Addr    string `toml:"addr"`
 	LogPath string `toml:"log_path"`
 
-	// metric     *metrics
 	collectors []prometheus.Collector
 
 	stats             func() ([]NginxStats, error)

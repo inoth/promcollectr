@@ -4,6 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"log"
 	"os"
 
 	"github.com/inoth/promcollectr"
@@ -14,7 +15,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "promcollectr",
+	Use:   "promclt",
 	Short: "prometheus采集器调度",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -32,7 +33,8 @@ var rootCmd = &cobra.Command{
 			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath(cfg.ConfDir+"/exporter")),
 		)
 		if err := tb.Run(); err != nil {
-			panic(err)
+			log.Fatalf("%w\n", err)
+			os.Exit(1)
 		}
 	},
 }
