@@ -1,7 +1,11 @@
 package promcollectr
 
 var (
-	default_port    = "9150"
+	default_name = "promcollectr"
+)
+
+var (
+	default_port    = ":9150"
 	default_path    = "/metrics"
 	default_cfgPath = "config/exporter"
 )
@@ -11,6 +15,7 @@ type Option func(*PromcollectrComponent)
 func defaultOption() PromcollectrComponent {
 	return PromcollectrComponent{
 		ready:      true,
+		name:       default_name,
 		Port:       default_port,
 		Path:       default_path,
 		CfgPath:    default_cfgPath,

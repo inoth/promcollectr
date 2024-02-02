@@ -21,7 +21,10 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
 		tb := toybox.New(
-			toybox.WithLoadConf(),
+			toybox.WithLoadConf(toybox.SetConfig{
+				ConfDir:  "../config",
+				FileType: "toml",
+			}),
 			promcollectr.NewPromcollectrComponent(promcollectr.WithCfgPath("../config/exporter")),
 		)
 		if err := tb.Run(); err != nil {
