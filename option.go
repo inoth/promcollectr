@@ -10,10 +10,10 @@ var (
 	default_cfgPath = "config/exporter"
 )
 
-type Option func(*PromcollectrComponent)
+type Option func(*PromcollectrServer)
 
-func defaultOption() PromcollectrComponent {
-	return PromcollectrComponent{
+func defaultOption() PromcollectrServer {
+	return PromcollectrServer{
 		ready:      true,
 		name:       default_name,
 		Port:       default_port,
@@ -24,25 +24,25 @@ func defaultOption() PromcollectrComponent {
 }
 
 func WithPort(port string) Option {
-	return func(pm *PromcollectrComponent) {
+	return func(pm *PromcollectrServer) {
 		pm.Port = port
 	}
 }
 
 func WithServerName(serverName string) Option {
-	return func(pm *PromcollectrComponent) {
+	return func(pm *PromcollectrServer) {
 		pm.ServerName = serverName
 	}
 }
 
 func WithPath(path string) Option {
-	return func(pm *PromcollectrComponent) {
+	return func(pm *PromcollectrServer) {
 		pm.Path = path
 	}
 }
 
 func WithCfgPath(cfgPath string) Option {
-	return func(pm *PromcollectrComponent) {
+	return func(pm *PromcollectrServer) {
 		pm.CfgPath = cfgPath
 	}
 }

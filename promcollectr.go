@@ -19,7 +19,7 @@ type conf struct {
 	Exporter map[string][]toml.Primitive `toml:"exporter"`
 }
 
-type PromcollectrComponent struct {
+type PromcollectrServer struct {
 	ready     bool
 	name      string
 	exporters []exporter.Exporter
@@ -42,19 +42,19 @@ func NewPromcollectrComponent(opts ...Option) toybox.Option {
 	}
 }
 
-func (pm *PromcollectrComponent) IsReady() {
+func (pm *PromcollectrServer) IsReady() {
 	pm.ready = true
 }
 
-func (pm *PromcollectrComponent) Ready() bool {
+func (pm *PromcollectrServer) Ready() bool {
 	return pm.ready
 }
 
-func (pm *PromcollectrComponent) Name() string {
+func (pm *PromcollectrServer) Name() string {
 	return pm.name
 }
 
-func (pm *PromcollectrComponent) Run(ctx context.Context) error {
+func (pm *PromcollectrServer) Run(ctx context.Context) error {
 	if !pm.ready {
 		return fmt.Errorf("server %s not ready", pm.name)
 	}
@@ -81,7 +81,7 @@ func (pm *PromcollectrComponent) Run(ctx context.Context) error {
 	return nil
 }
 
-func (pm *PromcollectrComponent) loadExporterCfg() error {
+func (pm *PromcollectrServer) loadExporterCfg() error {
 	paths, err := util.PathGlobPattern(pm.CfgPath + "/*.toml")
 	if err != nil {
 		panic(fmt.Errorf("no configuration available"))
@@ -108,7 +108,7 @@ func (pm *PromcollectrComponent) loadExporterCfg() error {
 	return nil
 }
 
-func (pm *PromcollectrComponent) loadExporter() error {
+func (pm *PromcollectrServer) loadExporter() error {
 	for key, val := range pm.cfg.Exporter {
 		if greator, ok := exporter.Collectors[key]; ok {
 			for _, v := range val {
@@ -123,7 +123,7 @@ func (pm *PromcollectrComponent) loadExporter() error {
 	return nil
 }
 
-func (pm *PromcollectrComponent) initExporter(ctx context.Context) error {
+func (pm *PromcollectrServer) initExporter(ctx context.Context) error {
 	for _, exp := range pm.exporters {
 		if err := exp.Init(ctx, pm.ServerName); err != nil {
 			return err
@@ -132,7 +132,7 @@ func (pm *PromcollectrComponent) initExporter(ctx context.Context) error {
 	return nil
 }
 
-func (pm *PromcollectrComponent) register() (*prometheus.Registry, error) {
+func (pm *PromcollectrServer) register() (*prometheus.Registry, error) {
 	reg := prometheus.NewRegistry()
 	for _, item := range pm.exporters {
 		if val, ok := item.(prometheus.Collector); ok {
