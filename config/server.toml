@@ -1,0 +1,9 @@
+[server.promcollectr]
+
+server_name = "default_server"
+port = ":9150"
+path = "/metrics"
+
+push_host = "http://127.0.0.1:9091"
+push_job = "test_job"
+push_interval = 10

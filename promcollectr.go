@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/inoth/promcollectr/exporter"
@@ -13,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/client_golang/prometheus/push"
 )
 
 type conf struct {
@@ -30,6 +32,10 @@ type PromcollectrServer struct {
 	Port       string `toml:"port"`
 	Path       string `toml:"path"`
 	CfgPath    string `toml:"cfg_path"`
+
+	PushHost     string `toml:"push_host"`
+	PushJob      string `toml:"push_job"`
+	PushInterval int    `toml:"push_interval"`
 }
 
 func NewPromcollectrComponent(opts ...Option) toybox.Option {
@@ -54,6 +60,25 @@ func (pm *PromcollectrServer) Name() string {
 	return pm.name
 }
 
+func (pm *PromcollectrServer) push(ctx context.Context, reg prometheus.Gatherer) {
+	tk := time.NewTicker(time.Second * time.Duration(pm.PushInterval))
+	ph := push.New(pm.PushHost, pm.PushJob).Gatherer(reg)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-tk.C:
+				err := ph.Push()
+				if err != nil {
+					fmt.Printf("push failed: %s\n", err)
+					continue
+				}
+			}
+		}
+	}()
+}
+
 func (pm *PromcollectrServer) Run(ctx context.Context) error {
 	if !pm.ready {
 		return fmt.Errorf("server %s not ready", pm.name)
@@ -71,6 +96,8 @@ func (pm *PromcollectrServer) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	pm.push(ctx, reg)
 
 	mux := http.NewServeMux()
 	mux.Handle(pm.Path, promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))

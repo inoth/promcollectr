@@ -1,5 +1,0 @@
-[server.promcollectr]
-
-server_name = "default_server"
-port = ":9150"
-path = "/metrics"
