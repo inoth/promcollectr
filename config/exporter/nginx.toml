@@ -1,7 +1,7 @@
 [[exporter.nginx]]
 
 name = "nginx1"
-addr = "http://101.35.6.208:8181/status"
+addr = "http://127.0.0.1:8181/status"
 log_path = "./access.log"
 
 
